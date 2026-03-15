@@ -1,0 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Nanum+Gothic:wght@400;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Nanum Gothic", ui-sans-serif, system-ui, sans-serif;
+  --font-game: "Gaegu", cursive;
+}
+
+body {
+  @apply bg-stone-100 text-stone-900 overflow-hidden;
+}
