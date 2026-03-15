@@ -51,6 +51,14 @@ interface MonsterConfig {
   icon: string;
 }
 
+interface BoyConfig {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  icon: string;
+}
+
 interface Message {
   role: 'user' | 'model';
   text: string;
@@ -61,6 +69,37 @@ const INITIAL_POSITION = 50;
 const TICK_INTERVAL = 100; // ms
 const BOY_PUSH_STRENGTH = 4;
 const ULTIMATE_STRENGTH = 12;
+
+const BOYS: BoyConfig[] = [
+  {
+    id: 'kirby',
+    name: '커비',
+    description: '무엇이든 빨아들이는 핑크색 귀요미!',
+    color: 'bg-pink-300',
+    icon: '💖'
+  },
+  {
+    id: 'shyguy',
+    name: '헤이호',
+    description: '가면을 쓴 귀여운 악당, 하지만 여기선 내 편!',
+    color: 'bg-red-400',
+    icon: '🎭'
+  },
+  {
+    id: 'ninjago',
+    name: '닌자고 레고',
+    description: '스핀짓주 마스터! 레고 닌자입니다.',
+    color: 'bg-green-500',
+    icon: '🥷'
+  },
+  {
+    id: 'pikmin',
+    name: '피크민',
+    description: '작지만 강한 생명체, 피크민입니다.',
+    color: 'bg-red-600',
+    icon: '🌱'
+  }
+];
 
 const MONSTERS: MonsterConfig[] = [
   {
@@ -210,6 +249,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [boyImage, setBoyImage] = useState<string | null>(null);
   const [monsterImage, setMonsterImage] = useState<string | null>(null);
+  const [selectedBoy, setSelectedBoy] = useState<BoyConfig>(BOYS[0]);
   const [selectedMonster, setSelectedMonster] = useState<MonsterConfig>(MONSTERS[0]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [apiKeySelected, setApiKeySelected] = useState(false);
@@ -468,9 +508,9 @@ export default function App() {
                 {currentPhrase && (
                   <motion.div
                     initial={{ opacity: 0, y: 10, scale: 0.8 }}
-                    animate={{ opacity: 1, y: -60, scale: 1 }}
+                    animate={{ opacity: 1, y: -40, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
-                    className="absolute -top-16 left-1/2 -translate-x-[85%] bg-white px-4 py-2 rounded-2xl shadow-xl border-2 border-sky-200 text-sky-900 font-bold whitespace-nowrap z-30"
+                    className="absolute -top-12 left-1/2 -translate-x-[85%] bg-white px-4 py-2 rounded-2xl shadow-xl border-2 border-sky-200 text-sky-900 font-bold whitespace-nowrap z-30"
                   >
                     {currentPhrase}
                     <div className="absolute -bottom-2 right-4 w-4 h-4 bg-white border-r-2 border-b-2 border-sky-200 rotate-45" />
@@ -487,7 +527,7 @@ export default function App() {
                     referrerPolicy="no-referrer"
                   />
                 ) : (
-                  <DefaultBoy />
+                  <DefaultBoy type={selectedBoy.id} />
                 )}
               </div>
               {/* Push Force Effect */}
@@ -646,6 +686,11 @@ export default function App() {
             onGenerateMonster={(img) => setMonsterImage(img)}
             apiKeySelected={apiKeySelected}
             onSelectKey={handleSelectKey}
+            selectedBoy={selectedBoy}
+            onSelectBoy={(b) => {
+              setSelectedBoy(b);
+              setBoyImage(null); // Reset custom image when switching types
+            }}
             selectedMonster={selectedMonster}
             onSelectMonster={(m) => {
               setSelectedMonster(m);
@@ -660,24 +705,81 @@ export default function App() {
 
 // --- Sub-components ---
 
-function DefaultBoy() {
+function DefaultBoy({ type = 'kirby' }: { type?: string }) {
+  const renderBoy = () => {
+    switch (type) {
+      case 'shyguy':
+        return (
+          <div className="relative w-32 h-40 bg-red-500 rounded-3xl border-4 border-red-700 flex flex-col items-center pt-6">
+            <div className="w-24 h-28 bg-white rounded-full border-4 border-stone-200 relative flex flex-col items-center justify-center">
+              <div className="flex gap-4 mb-2">
+                <div className="w-4 h-6 bg-black rounded-full" />
+                <div className="w-4 h-6 bg-black rounded-full" />
+              </div>
+              <div className="w-4 h-4 bg-black rounded-full" />
+            </div>
+            <div className="absolute -bottom-2 flex gap-8">
+              <div className="w-10 h-6 bg-blue-800 rounded-full" />
+              <div className="w-10 h-6 bg-blue-800 rounded-full" />
+            </div>
+          </div>
+        );
+      case 'ninjago':
+        return (
+          <div className="relative w-28 h-40 bg-green-600 rounded-lg border-4 border-green-800 flex flex-col items-center">
+            <div className="w-full h-12 bg-green-700 border-b-4 border-green-800 flex items-center justify-center">
+              <div className="w-20 h-6 bg-yellow-400 rounded-sm flex items-center justify-center gap-4">
+                <div className="w-3 h-1 bg-black rotate-12" />
+                <div className="w-3 h-1 bg-black -rotate-12" />
+              </div>
+            </div>
+            <div className="flex-1 w-full flex flex-col items-center justify-center gap-2">
+              <div className="w-16 h-1 bg-green-800" />
+              <div className="w-16 h-1 bg-green-800" />
+            </div>
+          </div>
+        );
+      case 'pikmin':
+        return (
+          <div className="relative w-24 h-48 flex flex-col items-center">
+            <div className="absolute -top-12 w-1 h-16 bg-green-700">
+              <div className="absolute -top-4 -left-3 w-8 h-12 bg-green-500 rounded-full rotate-12" />
+            </div>
+            <div className="w-20 h-28 bg-red-600 rounded-full border-4 border-red-800 flex flex-col items-center pt-6">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+                <div className="w-4 h-4 bg-black rounded-full" />
+              </div>
+              <div className="w-8 h-4 bg-red-800 rounded-full mt-2" />
+            </div>
+            <div className="flex gap-4 mt-auto">
+              <div className="w-6 h-4 bg-red-800 rounded-full" />
+              <div className="w-6 h-4 bg-red-800 rounded-full" />
+            </div>
+          </div>
+        );
+      default: // kirby
+        return (
+          <div className="w-32 h-32 bg-pink-300 rounded-full border-4 border-pink-400 relative shadow-inner">
+            <div className="absolute top-1/3 left-1/4 w-3 h-8 bg-black rounded-full" />
+            <div className="absolute top-1/3 right-1/4 w-3 h-8 bg-black rounded-full" />
+            <div className="absolute top-1/2 left-4 w-6 h-3 bg-pink-400 rounded-full opacity-60" />
+            <div className="absolute top-1/2 right-4 w-6 h-3 bg-pink-400 rounded-full opacity-60" />
+            <div className="absolute top-1/3 -translate-y-1/2 left-2 right-2 flex justify-between z-10">
+              <div className="w-12 h-12 border-4 border-stone-800 rounded-full bg-white/30" />
+              <div className="w-12 h-12 border-4 border-stone-800 rounded-full bg-white/30" />
+            </div>
+            <div className="absolute top-1/3 -translate-y-1/2 left-1/2 -translate-x-1/2 w-4 h-1 bg-stone-800 z-10" />
+          </div>
+        );
+    }
+  };
+
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center">
-      <div className="w-32 h-32 bg-pink-300 rounded-full border-4 border-pink-400 relative shadow-inner">
-        {/* Kirby Eyes */}
-        <div className="absolute top-1/3 left-1/4 w-3 h-8 bg-black rounded-full" />
-        <div className="absolute top-1/3 right-1/4 w-3 h-8 bg-black rounded-full" />
-        {/* Kirby Cheeks */}
-        <div className="absolute top-1/2 left-4 w-6 h-3 bg-pink-400 rounded-full opacity-60" />
-        <div className="absolute top-1/2 right-4 w-6 h-3 bg-pink-400 rounded-full opacity-60" />
-        {/* Glasses */}
-        <div className="absolute top-1/3 -translate-y-1/2 left-2 right-2 flex justify-between z-10">
-          <div className="w-12 h-12 border-4 border-stone-800 rounded-full bg-white/30" />
-          <div className="w-12 h-12 border-4 border-stone-800 rounded-full bg-white/30" />
-        </div>
-        <div className="absolute top-1/3 -translate-y-1/2 left-1/2 -translate-x-1/2 w-4 h-1 bg-stone-800 z-10" />
-      </div>
-      <p className="mt-4 text-pink-900 font-bold text-xl bg-white/80 px-4 py-1 rounded-full">나 (커비)</p>
+      {renderBoy()}
+      <p className="mt-4 text-stone-900 font-bold text-xl bg-white/80 px-4 py-1 rounded-full">
+        나 ({BOYS.find(b => b.id === type)?.name || '열공 소년'})
+      </p>
     </div>
   );
 }
@@ -865,6 +967,8 @@ function SettingsPanel({
   onGenerateMonster,
   apiKeySelected,
   onSelectKey,
+  selectedBoy,
+  onSelectBoy,
   selectedMonster,
   onSelectMonster
 }: { 
@@ -873,6 +977,8 @@ function SettingsPanel({
   onGenerateMonster: (img: string) => void;
   apiKeySelected: boolean;
   onSelectKey: () => void;
+  selectedBoy: BoyConfig;
+  onSelectBoy: (b: BoyConfig) => void;
   selectedMonster: MonsterConfig;
   onSelectMonster: (m: MonsterConfig) => void;
 }) {
@@ -889,7 +995,7 @@ function SettingsPanel({
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const prompt = type === 'boy' 
-        ? "Kirby character from Nintendo, cute pink round creature with round glasses, 3D render, white background, high quality, vibrant colors"
+        ? `A character representing ${selectedBoy.name}, ${selectedBoy.description}, 3D render, white background, high quality, vibrant colors`
         : `A monster character representing ${selectedMonster.name}, ${selectedMonster.description}, 3D render, white background, high quality, vibrant colors`;
 
       const response = await ai.models.generateContent({
@@ -936,6 +1042,31 @@ function SettingsPanel({
             <X size={28} />
           </button>
         </div>
+
+        {/* Boy Selection */}
+        <section className="mb-8 border-t border-stone-100 pt-8">
+          <h3 className="text-xl font-bold text-stone-800 mb-4 flex items-center gap-2">
+            <div className="bg-sky-100 p-2 rounded-lg text-sky-600">👤</div>
+            나의 캐릭터 선택
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {BOYS.map(boy => (
+              <button
+                key={boy.id}
+                onClick={() => onSelectBoy(boy)}
+                className={cn(
+                  "p-3 rounded-2xl border-2 text-center transition-all flex flex-col items-center gap-2",
+                  selectedBoy.id === boy.id 
+                    ? "border-sky-500 bg-sky-50 ring-2 ring-sky-200" 
+                    : "border-stone-100 hover:border-sky-200 hover:bg-stone-50"
+                )}
+              >
+                <span className="text-3xl">{boy.icon}</span>
+                <span className="font-bold text-stone-900 text-sm">{boy.name}</span>
+              </button>
+            ))}
+          </div>
+        </section>
 
         {/* Monster Selection */}
         <section className="mb-8">
@@ -1017,8 +1148,8 @@ function SettingsPanel({
                     {isGenerating === 'boy' ? <Loader2 className="animate-spin" size={32} /> : <ImageIcon size={32} />}
                   </div>
                   <div className="text-center">
-                    <p className="font-bold text-sky-900">나(커비) 생성</p>
-                    <p className="text-xs text-sky-700 mt-1">안경 쓴 귀여운 커비</p>
+                    <p className="font-bold text-sky-900">나({selectedBoy.name}) 생성</p>
+                    <p className="text-xs text-sky-700 mt-1">{selectedBoy.name} 스타일</p>
                   </div>
                 </button>
 
