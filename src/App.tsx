@@ -438,6 +438,7 @@ export default function App() {
 
   return (
     <div className="relative h-screen w-full bg-sky-50 font-game overflow-hidden flex flex-col">
+      <GameBackground />
       {/* Header */}
       <header className="p-4 flex justify-between items-center bg-white/50 backdrop-blur-sm border-b border-sky-100 z-10">
         <div className="flex items-center gap-2 shrink-0">
@@ -753,6 +754,74 @@ export default function App() {
 }
 
 // --- Sub-components ---
+
+function GameBackground() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* Animated Clouds */}
+      <motion.div 
+        animate={{ x: [-100, 2000] }}
+        transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+        className="absolute top-[10%] left-0 opacity-20"
+      >
+        <div className="w-48 h-16 bg-white rounded-full blur-xl" />
+      </motion.div>
+      <motion.div 
+        animate={{ x: [2000, -200] }}
+        transition={{ duration: 80, repeat: Infinity, ease: "linear" }}
+        className="absolute top-[25%] right-0 opacity-15"
+      >
+        <div className="w-64 h-20 bg-white rounded-full blur-2xl" />
+      </motion.div>
+      <motion.div 
+        animate={{ x: [-200, 2000] }}
+        transition={{ duration: 100, repeat: Infinity, ease: "linear" }}
+        className="absolute top-[40%] left-0 opacity-10"
+      >
+        <div className="w-40 h-12 bg-white rounded-full blur-lg" />
+      </motion.div>
+
+      {/* Floating Particles/Dust */}
+      {[...Array(15)].map((_, i) => (
+        <motion.div
+          key={i}
+          initial={{ 
+            x: Math.random() * 100 + "%", 
+            y: Math.random() * 100 + "%",
+            opacity: Math.random() * 0.3 + 0.1
+          }}
+          animate={{ 
+            y: [null, "-=100"],
+            opacity: [null, 0]
+          }}
+          transition={{ 
+            duration: Math.random() * 10 + 10, 
+            repeat: Infinity, 
+            ease: "linear",
+            delay: Math.random() * 10
+          }}
+          className="absolute w-1 h-1 bg-sky-200 rounded-full"
+        />
+      ))}
+
+      {/* Subtle Study Elements */}
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+        className="absolute -bottom-20 -left-20 w-64 h-64 border-4 border-sky-100/30 rounded-full flex items-center justify-center"
+      >
+        <div className="text-4xl opacity-10 grayscale">📚</div>
+      </motion.div>
+      <motion.div
+        animate={{ rotate: -360 }}
+        transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
+        className="absolute -top-20 -right-20 w-80 h-80 border-4 border-sky-100/30 rounded-full flex items-center justify-center"
+      >
+        <div className="text-4xl opacity-10 grayscale">✏️</div>
+      </motion.div>
+    </div>
+  );
+}
 
 function DefaultBoy({ type = 'kirby', customImage }: { type?: string, customImage?: string | null }) {
   const renderBoy = () => {
