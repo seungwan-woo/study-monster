@@ -379,6 +379,46 @@ export default function App() {
     };
   }, []);
 
+  // Generate Ninjago image if selected
+  useEffect(() => {
+    const generateNinjagoImage = async () => {
+      if (selectedBoy.id === 'ninjago' && !boyImage) {
+        try {
+          const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+          const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: {
+              parts: [
+                {
+                  text: 'A cute LEGO Ninja character in Japanese manga/anime style. Vibrant colors, dynamic pose, holding a small katana. High quality, clean lines, white background.',
+                },
+              ],
+            },
+            config: {
+              imageConfig: {
+                    aspectRatio: "1:1",
+                    imageSize: "1K"
+                }
+            },
+          });
+
+          for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+              const base64EncodeString = part.inlineData.data;
+              setBoyImage(`data:image/png;base64,${base64EncodeString}`);
+            }
+          }
+        } catch (error) {
+          console.error("Failed to generate Ninjago image:", error);
+        }
+      } else if (selectedBoy.id !== 'ninjago' && boyImage) {
+        setBoyImage(null);
+      }
+    };
+
+    generateNinjagoImage();
+  }, [selectedBoy.id, boyImage]);
+
   useEffect(() => {
     const checkKey = async () => {
       if (window.aistudio) {
@@ -475,16 +515,22 @@ export default function App() {
           <div className="absolute bottom-10 right-10 w-48 h-48 bg-sky-300 rounded-full blur-3xl" />
         </div>
 
+        {/* Progress Bar (The Ground) - Moved to top for landscape visibility */}
+        <div className="absolute top-4 left-4 right-4 h-6 bg-stone-200 rounded-full overflow-hidden border-2 border-stone-300 z-30 shadow-inner">
+          <motion.div 
+            className="h-full bg-gradient-to-r from-sky-400 to-sky-500 relative"
+            animate={{ width: `${position}%` }}
+            transition={{ type: 'spring', stiffness: 50 }}
+          >
+            <div className="absolute inset-0 bg-white/20 animate-pulse" />
+          </motion.div>
+          {/* Center Marker */}
+          <div className="absolute top-0 bottom-0 left-1/2 w-1 bg-white/50 z-10" />
+        </div>
+
         {/* The Battleground */}
-        <div className="w-full max-w-4xl h-96 relative flex items-center">
-          {/* Progress Bar (The Ground) */}
-          <div className="absolute bottom-0 left-0 w-full h-4 bg-stone-200 rounded-full overflow-hidden border-2 border-stone-300">
-            <motion.div 
-              className="h-full bg-sky-400"
-              animate={{ width: `${position}%` }}
-              transition={{ type: 'spring', stiffness: 50 }}
-            />
-          </div>
+        <div className="w-full max-w-4xl h-full max-h-96 relative flex items-center">
+          {/* Removed old progress bar from here */}
 
           {/* Boy Character */}
           <motion.div 
@@ -503,17 +549,17 @@ export default function App() {
             }}
           >
             <div className="relative group">
-              {/* Humorous Bubble */}
+              {/* Humorous Bubble - Moved to middle-bottom with transparency to avoid progress bar overlap */}
               <AnimatePresence>
                 {currentPhrase && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.8 }}
-                    animate={{ opacity: 1, y: -40, scale: 1 }}
+                    initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
-                    className="absolute -top-12 left-1/2 -translate-x-[85%] bg-white px-4 py-2 rounded-2xl shadow-xl border-2 border-sky-200 text-sky-900 font-bold whitespace-nowrap z-30"
+                    className="absolute top-3/4 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border-2 border-sky-200/50 text-sky-900 font-bold whitespace-nowrap z-40"
                   >
                     {currentPhrase}
-                    <div className="absolute -bottom-2 right-4 w-4 h-4 bg-white border-r-2 border-b-2 border-sky-200 rotate-45" />
+                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white/80 backdrop-blur-md border-l-2 border-t-2 border-sky-200/50 rotate-45" />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -527,7 +573,7 @@ export default function App() {
                     referrerPolicy="no-referrer"
                   />
                 ) : (
-                  <DefaultBoy type={selectedBoy.id} />
+                  <DefaultBoy type={selectedBoy.id} customImage={boyImage} />
                 )}
               </div>
               {/* Push Force Effect */}
@@ -567,20 +613,20 @@ export default function App() {
             }}
           >
             <div className="relative group">
-              {/* Monster Humorous Bubble */}
+              {/* Monster Humorous Bubble - Moved to middle-bottom with transparency */}
               <AnimatePresence>
                 {monsterPhrase && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.8 }}
-                    animate={{ opacity: 1, y: -40, scale: 1 }}
+                    initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                     className={cn(
-                      "absolute -top-12 left-1/2 -translate-x-[15%] bg-white px-4 py-2 rounded-2xl shadow-xl border-2 border-red-200 text-red-900 font-bold whitespace-nowrap z-30",
-                      isUltimate === 'monster' && "border-red-600 bg-red-50 text-red-700 scale-110"
+                      "absolute top-3/4 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border-2 border-red-200/50 text-red-900 font-bold whitespace-nowrap z-40",
+                      isUltimate === 'monster' && "border-red-600/50 bg-red-50/80 text-red-700 scale-110"
                     )}
                   >
                     {monsterPhrase}
-                    <div className="absolute -bottom-2 left-4 w-4 h-4 bg-white border-r-2 border-b-2 border-red-200 rotate-45" />
+                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white/80 backdrop-blur-md border-l-2 border-t-2 border-red-200/50 rotate-45" />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -618,11 +664,13 @@ export default function App() {
           </motion.div>
         </div>
 
-        {/* Controls - Removed the big button from here */}
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-30 w-full">
-          <p className="text-sky-900/60 text-lg bg-white/50 px-4 py-2 rounded-full backdrop-blur-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[80%]">
-            {gameState === 'playing' ? "공부하고 상단 버튼을 터치하세요!" : "게임이 끝났어요!"}
-          </p>
+        {/* Controls - Removed the instruction text as requested */}
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-30 w-full">
+          {gameState !== 'playing' && (
+            <p className="text-sky-900/60 text-lg bg-white/50 px-4 py-2 rounded-full backdrop-blur-sm">
+              게임이 끝났어요!
+            </p>
+          )}
         </div>
       </main>
 
@@ -696,6 +744,7 @@ export default function App() {
               setSelectedMonster(m);
               setMonsterImage(null); // Reset custom image when switching types
             }}
+            boyImage={boyImage}
           />
         )}
       </AnimatePresence>
@@ -705,98 +754,86 @@ export default function App() {
 
 // --- Sub-components ---
 
-function DefaultBoy({ type = 'kirby' }: { type?: string }) {
+function DefaultBoy({ type = 'kirby', customImage }: { type?: string, customImage?: string | null }) {
   const renderBoy = () => {
     switch (type) {
       case 'shyguy':
         return (
-          <div className="relative w-32 h-44 flex flex-col items-center">
-            {/* Body */}
-            <div className="w-28 h-36 bg-red-500 rounded-[3rem] border-4 border-red-700 relative flex flex-col items-center pt-6 shadow-lg">
+          <div className="relative w-36 h-36 flex flex-col items-center justify-center">
+            {/* Shyguy Body */}
+            <div className="w-28 h-32 bg-red-500 rounded-3xl border-4 border-red-600 relative shadow-lg overflow-hidden">
               {/* Mask */}
-              <div className="w-22 h-26 bg-white rounded-full border-4 border-stone-200 relative flex flex-col items-center justify-center shadow-inner">
-                {/* Eyes */}
-                <div className="flex gap-4 mb-2">
-                  <div className="w-4 h-7 bg-black rounded-full" />
-                  <div className="w-4 h-7 bg-black rounded-full" />
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 w-20 h-24 bg-white rounded-[40%] border-2 border-stone-200 shadow-inner flex flex-col items-center pt-6">
+                <div className="flex gap-4">
+                  <div className="w-4 h-8 bg-stone-900 rounded-full" />
+                  <div className="w-4 h-8 bg-stone-900 rounded-full" />
                 </div>
-                {/* Mouth */}
-                <div className="w-5 h-5 bg-black rounded-full" />
-                {/* Mask Straps */}
-                <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-8 bg-stone-800 rounded-full" />
-                <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-8 bg-stone-800 rounded-full" />
+                <div className="w-6 h-6 bg-stone-900 rounded-full mt-2" />
               </div>
               {/* Belt */}
-              <div className="absolute bottom-6 w-full h-4 bg-stone-800 flex items-center justify-center">
-                <div className="w-6 h-6 bg-yellow-400 border-2 border-stone-900 rounded-sm" />
-              </div>
+              <div className="absolute bottom-4 left-0 right-0 h-4 bg-stone-800" />
             </div>
             {/* Feet */}
-            <div className="absolute -bottom-2 flex gap-10">
-              <div className="w-12 h-7 bg-blue-900 rounded-full border-b-4 border-blue-950 shadow-md" />
-              <div className="w-12 h-7 bg-blue-900 rounded-full border-b-4 border-blue-950 shadow-md" />
+            <div className="flex gap-6 -mt-2">
+              <div className="w-10 h-6 bg-blue-900 rounded-full border-b-4 border-blue-950 shadow-md" />
+              <div className="w-10 h-6 bg-blue-900 rounded-full border-b-4 border-blue-950 shadow-md" />
             </div>
           </div>
         );
       case 'ninjago':
         return (
-          <div className="relative w-32 h-44 flex flex-col items-center">
-            {/* Lego Head/Hood */}
-            <div className="w-28 h-36 bg-green-600 rounded-2xl border-4 border-green-800 relative flex flex-col items-center overflow-hidden shadow-lg">
-              {/* Mask/Opening */}
-              <div className="w-full h-14 bg-green-700 border-b-4 border-green-800 flex items-center justify-center mt-4">
-                {/* Face Strip */}
-                <div className="w-24 h-8 bg-yellow-400 rounded-sm flex items-center justify-center gap-6 relative">
-                  {/* Eyes */}
-                  <div className="w-4 h-1.5 bg-black rotate-12 rounded-full" />
-                  <div className="w-4 h-1.5 bg-black -rotate-12 rounded-full" />
-                  {/* Eyebrows */}
-                  <div className="absolute top-1 left-6 w-4 h-0.5 bg-stone-800 -rotate-6" />
-                  <div className="absolute top-1 right-6 w-4 h-0.5 bg-stone-800 rotate-6" />
+          <div className="relative w-36 h-36 flex flex-col items-center justify-center">
+            {/* Ninjago Image or Placeholder */}
+            {customImage ? (
+              <img 
+                src={customImage} 
+                alt="Ninjago" 
+                className="w-32 h-32 object-contain drop-shadow-xl"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-24 h-24 bg-green-600 rounded-lg border-4 border-green-800 relative shadow-lg flex flex-col items-center pt-2">
+                <div className="w-full h-6 bg-stone-800 mt-2 flex items-center justify-center">
+                  <div className="flex gap-4">
+                    <div className="w-4 h-2 bg-yellow-300 rounded-full" />
+                    <div className="w-4 h-2 bg-yellow-300 rounded-full" />
+                  </div>
                 </div>
+                <div className="mt-4 w-16 h-2 bg-green-800 rounded-full" />
               </div>
-              {/* Gi Details */}
-              <div className="flex-1 w-full flex flex-col items-center pt-4 gap-3">
-                <div className="w-20 h-1.5 bg-green-800 rounded-full opacity-50" />
-                <div className="w-16 h-1.5 bg-green-800 rounded-full opacity-50" />
-                {/* Ninja Symbol */}
-                <div className="w-8 h-8 rounded-full border-2 border-green-800 flex items-center justify-center text-[10px] font-bold text-green-900">忍</div>
-              </div>
-            </div>
-            {/* Hands (Lego style) */}
-            <div className="absolute top-1/2 -left-4 w-6 h-6 border-4 border-yellow-500 rounded-full border-r-transparent -rotate-45" />
-            <div className="absolute top-1/2 -right-4 w-6 h-6 border-4 border-yellow-500 rounded-full border-l-transparent rotate-45" />
+            )}
+            <div className="w-20 h-4 bg-stone-800 rounded-full -mt-1 opacity-20" />
           </div>
         );
       case 'pikmin':
         return (
-          <div className="relative w-28 h-48 flex flex-col items-center">
-            {/* Stem & Leaf */}
-            <div className="absolute -top-14 w-1.5 h-20 bg-green-800 flex items-center justify-center">
-              <motion.div 
-                animate={{ rotate: [10, -10, 10] }}
-                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                className="absolute -top-6 -left-4 w-10 h-14 bg-green-500 rounded-[100%_0%_100%_0%] border-2 border-green-700 shadow-sm" 
-              />
-            </div>
-            {/* Body */}
-            <div className="w-22 h-32 bg-red-500 rounded-full border-4 border-red-700 relative flex flex-col items-center pt-8 shadow-lg">
-              {/* Big Eyes */}
-              <div className="flex gap-2">
-                <div className="w-8 h-10 bg-white rounded-full border-2 border-red-800 flex items-center justify-center">
-                  <div className="w-3 h-5 bg-black rounded-full" />
+          <div className="relative w-36 h-48 flex flex-col items-center justify-end">
+            {/* Leaf/Flower on top */}
+            <motion.div 
+              animate={{ rotate: [0, 5, -5, 0] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="absolute top-0 w-1 h-16 bg-green-600 origin-bottom"
+            >
+              <div className="absolute -top-4 -left-4 w-10 h-6 bg-green-500 rounded-full border-2 border-green-700 rotate-[-20deg]" />
+            </motion.div>
+            {/* Pikmin Body */}
+            <div className="w-16 h-28 bg-red-500 rounded-full border-4 border-red-700 relative shadow-md flex flex-col items-center pt-4">
+              {/* Eyes */}
+              <div className="flex gap-3">
+                <div className="w-5 h-5 bg-white rounded-full border-2 border-red-900 flex items-center justify-center">
+                  <div className="w-2 h-2 bg-black rounded-full" />
                 </div>
-                <div className="w-8 h-10 bg-white rounded-full border-2 border-red-800 flex items-center justify-center">
-                  <div className="w-3 h-5 bg-black rounded-full" />
+                <div className="w-5 h-5 bg-white rounded-full border-2 border-red-900 flex items-center justify-center">
+                  <div className="w-2 h-2 bg-black rounded-full" />
                 </div>
               </div>
               {/* Nose */}
-              <div className="w-3 h-5 bg-red-700 rounded-full mt-1" />
+              <div className="w-2 h-8 bg-red-700 rounded-full mt-1 -mb-2 z-10" />
             </div>
             {/* Feet */}
-            <div className="flex gap-6 -mt-2">
-              <div className="w-8 h-5 bg-red-700 rounded-full border-b-2 border-red-900" />
-              <div className="w-8 h-5 bg-red-700 rounded-full border-b-2 border-red-900" />
+            <div className="flex gap-4 -mt-1">
+              <div className="w-6 h-3 bg-red-700 rounded-full" />
+              <div className="w-6 h-3 bg-red-700 rounded-full" />
             </div>
           </div>
         );
@@ -806,28 +843,25 @@ function DefaultBoy({ type = 'kirby' }: { type?: string }) {
             {/* Kirby Body */}
             <div className="w-32 h-32 bg-pink-300 rounded-full border-4 border-pink-400 relative shadow-[inset_-8px_-8px_20px_rgba(0,0,0,0.1)] flex items-center justify-center">
               {/* Eyes */}
-              <div className="absolute top-[30%] left-[30%] w-3.5 h-10 bg-black rounded-full overflow-hidden">
+              <div className="absolute top-[25%] left-[30%] w-3.5 h-10 bg-black rounded-full overflow-hidden">
                 <div className="absolute top-1 left-1 w-1.5 h-3 bg-white rounded-full" />
                 <div className="absolute bottom-1 left-0 w-full h-3 bg-blue-500" />
               </div>
-              <div className="absolute top-[30%] right-[30%] w-3.5 h-10 bg-black rounded-full overflow-hidden">
+              <div className="absolute top-[25%] right-[30%] w-3.5 h-10 bg-black rounded-full overflow-hidden">
                 <div className="absolute top-1 left-1 w-1.5 h-3 bg-white rounded-full" />
                 <div className="absolute bottom-1 left-0 w-full h-3 bg-blue-500" />
               </div>
-              {/* Mouth */}
-              <div className="absolute top-[55%] w-4 h-2 bg-pink-600 rounded-full" />
+              {/* Open Mouth "앙" */}
+              <div className="absolute top-[55%] w-8 h-10 bg-pink-600 rounded-full border-2 border-pink-700 flex items-center justify-center overflow-hidden">
+                <div className="w-6 h-4 bg-red-400 rounded-full mt-4" />
+              </div>
               {/* Cheeks */}
-              <div className="absolute top-[50%] left-4 w-7 h-3.5 bg-pink-400 rounded-full opacity-50 blur-[1px]" />
-              {/* Study Glasses (Themed) */}
-              <div className="absolute top-1/3 -translate-y-1/2 left-2 right-2 flex justify-between z-10 pointer-events-none">
-                <div className="w-14 h-14 border-4 border-stone-800 rounded-full bg-white/20 backdrop-blur-[1px]" />
-                <div className="w-14 h-14 border-4 border-stone-800 rounded-full bg-white/20 backdrop-blur-[1px]" />
-              </div>
-              <div className="absolute top-1/3 -translate-y-1/2 left-1/2 -translate-x-1/2 w-4 h-1.5 bg-stone-800 z-10" />
+              <div className="absolute top-[50%] left-4 w-7 h-3.5 bg-pink-400 rounded-full opacity-60 blur-[1px]" />
+              <div className="absolute top-[50%] right-4 w-7 h-3.5 bg-pink-400 rounded-full opacity-60 blur-[1px]" />
             </div>
-            {/* Kirby Feet */}
-            <div className="absolute -bottom-2 -left-1 w-14 h-8 bg-red-500 rounded-full border-b-4 border-red-700 rotate-[-10deg] shadow-md" />
-            <div className="absolute -bottom-2 -right-1 w-14 h-8 bg-red-500 rounded-full border-b-4 border-red-700 rotate-[10deg] shadow-md" />
+            {/* Kirby Arms */}
+            <div className="absolute top-1/2 -left-2 w-10 h-8 bg-pink-300 border-2 border-pink-400 rounded-full rotate-[-30deg]" />
+            <div className="absolute top-1/2 -right-2 w-10 h-8 bg-pink-300 border-2 border-pink-400 rounded-full rotate-[30deg]" />
           </div>
         );
     }
@@ -1029,7 +1063,8 @@ function SettingsPanel({
   selectedBoy,
   onSelectBoy,
   selectedMonster,
-  onSelectMonster
+  onSelectMonster,
+  boyImage
 }: { 
   onClose: () => void;
   onGenerateBoy: (img: string) => void;
@@ -1040,6 +1075,7 @@ function SettingsPanel({
   onSelectBoy: (b: BoyConfig) => void;
   selectedMonster: MonsterConfig;
   onSelectMonster: (m: MonsterConfig) => void;
+  boyImage: string | null;
 }) {
   const [isGenerating, setIsGenerating] = useState<'boy' | 'monster' | null>(null);
   const [imageSize, setImageSize] = useState<'1K' | '2K' | '4K'>('1K');
@@ -1112,7 +1148,7 @@ function SettingsPanel({
           {/* Boy Preview Card */}
           <div className="mb-6 bg-sky-50 rounded-3xl p-6 border-2 border-sky-100 flex flex-col sm:flex-row items-center gap-6">
             <div className="w-32 h-32 flex-shrink-0">
-              <DefaultBoy type={selectedBoy.id} />
+              <DefaultBoy type={selectedBoy.id} customImage={boyImage} />
             </div>
             <div className="text-center sm:text-left">
               <h4 className="text-2xl font-bold text-sky-900 mb-2">{selectedBoy.name}</h4>
