@@ -1,6 +1,7 @@
 # Pages
 
-https://github.com/seungwan-woo/study-monster
+![alt text](image.png)
+https://seungwan-woo.github.io/study-monster/
 
 # Run and deploy your AI Studio app
 
