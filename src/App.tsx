@@ -535,7 +535,7 @@ export default function App() {
 
           {/* Boy Character */}
           <motion.div 
-            className="absolute z-20"
+            className="absolute z-30"
             animate={{ 
               left: `calc(${position}% - 120px)`,
               x: boyHit ? [0, -10, 10, -10, 0] : 0,
@@ -557,10 +557,10 @@ export default function App() {
                     initial={{ opacity: 0, y: 20, scale: 0.8 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
-                    className="absolute top-3/4 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border-2 border-sky-200/50 text-sky-900 font-bold whitespace-nowrap z-40"
+                    className="absolute top-[60%] left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border-2 border-sky-200/50 text-sky-900 font-bold whitespace-nowrap z-50"
                   >
                     {currentPhrase}
-                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white/80 backdrop-blur-md border-l-2 border-t-2 border-sky-200/50 rotate-45" />
+                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white/80 backdrop-blur-md border-r-2 border-b-2 border-sky-200/50 rotate-45" />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -622,12 +622,12 @@ export default function App() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                     className={cn(
-                      "absolute top-3/4 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border-2 border-red-200/50 text-red-900 font-bold whitespace-nowrap z-40",
+                      "absolute top-[60%] left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border-2 border-red-200/50 text-red-900 font-bold whitespace-nowrap z-50",
                       isUltimate === 'monster' && "border-red-600/50 bg-red-50/80 text-red-700 scale-110"
                     )}
                   >
                     {monsterPhrase}
-                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white/80 backdrop-blur-md border-l-2 border-t-2 border-red-200/50 rotate-45" />
+                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white/80 backdrop-blur-md border-r-2 border-b-2 border-red-200/50 rotate-45" />
                   </motion.div>
                 )}
               </AnimatePresence>
