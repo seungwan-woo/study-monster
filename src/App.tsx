@@ -538,15 +538,17 @@ export default function App() {
             className="absolute z-30"
             animate={{ 
               left: `calc(${position}% - 120px)`,
-              x: boyHit ? [0, -10, 10, -10, 0] : 0,
-              rotate: boyHit ? [0, -5, 5, -5, 0] : 0,
-              scale: boyHit ? [1, 1.1, 0.9, 1] : 1
+              y: boyHit ? [0, -20, 20, -20, 0] : [0, -10, 0],
+              x: boyHit ? [0, -25, 25, -25, 25, 0] : 0,
+              rotate: boyHit ? [0, -15, 15, -15, 15, 0] : 0,
+              scale: boyHit ? [1, 1.3, 0.8, 1.2, 1] : 1
             }}
             transition={{ 
               left: { type: 'spring', stiffness: 50, damping: 15 },
-              x: { duration: 0.3 },
-              rotate: { duration: 0.3 },
-              scale: { duration: 0.3 }
+              y: boyHit ? { duration: 0.4 } : { duration: 3, repeat: Infinity, ease: "easeInOut" },
+              x: { duration: 0.4 },
+              rotate: { duration: 0.4 },
+              scale: { duration: 0.4 }
             }}
           >
             <div className="relative group">
@@ -602,15 +604,17 @@ export default function App() {
             className="absolute z-20"
             animate={{ 
               left: `calc(${position}% + 20px)`,
-              x: monsterHit ? [0, 10, -10, 10, 0] : 0,
-              rotate: monsterHit ? [0, 5, -5, 5, 0] : 0,
-              scale: monsterHit ? [1, 1.1, 0.9, 1] : 1
+              y: monsterHit ? [0, -20, 20, -20, 0] : [0, -10, 0],
+              x: monsterHit ? [0, 25, -25, 25, -25, 0] : 0,
+              rotate: monsterHit ? [0, 15, -15, 15, -15, 0] : 0,
+              scale: monsterHit ? [1, 1.3, 0.8, 1.2, 1] : 1
             }}
             transition={{ 
               left: { type: 'spring', stiffness: 50, damping: 15 },
-              x: { duration: 0.3 },
-              rotate: { duration: 0.3 },
-              scale: { duration: 0.3 }
+              y: monsterHit ? { duration: 0.4 } : { duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 },
+              x: { duration: 0.4 },
+              rotate: { duration: 0.4 },
+              scale: { duration: 0.4 }
             }}
           >
             <div className="relative group">
@@ -760,64 +764,116 @@ function GameBackground() {
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {/* Animated Clouds */}
       <motion.div 
-        animate={{ x: [-100, 2000] }}
-        transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+        animate={{ 
+          x: [-100, 2000],
+          y: [0, 20, 0]
+        }}
+        transition={{ 
+          x: { duration: 60, repeat: Infinity, ease: "linear" },
+          y: { duration: 5, repeat: Infinity, ease: "easeInOut" }
+        }}
         className="absolute top-[10%] left-0 opacity-20"
       >
         <div className="w-48 h-16 bg-white rounded-full blur-xl" />
       </motion.div>
       <motion.div 
-        animate={{ x: [2000, -200] }}
-        transition={{ duration: 80, repeat: Infinity, ease: "linear" }}
+        animate={{ 
+          x: [2000, -200],
+          y: [0, -30, 0]
+        }}
+        transition={{ 
+          x: { duration: 80, repeat: Infinity, ease: "linear" },
+          y: { duration: 7, repeat: Infinity, ease: "easeInOut" }
+        }}
         className="absolute top-[25%] right-0 opacity-15"
       >
         <div className="w-64 h-20 bg-white rounded-full blur-2xl" />
       </motion.div>
       <motion.div 
-        animate={{ x: [-200, 2000] }}
-        transition={{ duration: 100, repeat: Infinity, ease: "linear" }}
+        animate={{ 
+          x: [-200, 2000],
+          y: [0, 15, 0]
+        }}
+        transition={{ 
+          x: { duration: 100, repeat: Infinity, ease: "linear" },
+          y: { duration: 6, repeat: Infinity, ease: "easeInOut" }
+        }}
         className="absolute top-[40%] left-0 opacity-10"
       >
         <div className="w-40 h-12 bg-white rounded-full blur-lg" />
       </motion.div>
 
       {/* Floating Particles/Dust */}
-      {[...Array(15)].map((_, i) => (
+      {[...Array(20)].map((_, i) => (
         <motion.div
           key={i}
           initial={{ 
             x: Math.random() * 100 + "%", 
             y: Math.random() * 100 + "%",
-            opacity: Math.random() * 0.3 + 0.1
+            opacity: Math.random() * 0.3 + 0.1,
+            scale: Math.random() * 0.5 + 0.5
           }}
           animate={{ 
-            y: [null, "-=100"],
+            y: [null, "-=150"],
+            x: [null, (Math.random() - 0.5) * 50],
             opacity: [null, 0]
           }}
           transition={{ 
-            duration: Math.random() * 10 + 10, 
+            duration: Math.random() * 15 + 10, 
             repeat: Infinity, 
             ease: "linear",
             delay: Math.random() * 10
           }}
-          className="absolute w-1 h-1 bg-sky-200 rounded-full"
+          className="absolute w-1.5 h-1.5 bg-sky-200 rounded-full blur-[1px]"
         />
       ))}
 
       {/* Subtle Study Elements */}
       <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+        animate={{ 
+          rotate: 360,
+          scale: [1, 1.1, 1]
+        }}
+        transition={{ 
+          rotate: { duration: 40, repeat: Infinity, ease: "linear" },
+          scale: { duration: 4, repeat: Infinity, ease: "easeInOut" }
+        }}
         className="absolute -bottom-20 -left-20 w-64 h-64 border-4 border-sky-100/30 rounded-full flex items-center justify-center"
       >
         <div className="text-4xl opacity-10 grayscale">📚</div>
       </motion.div>
       <motion.div
-        animate={{ rotate: -360 }}
-        transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
+        animate={{ 
+          rotate: -360,
+          scale: [1, 1.2, 1]
+        }}
+        transition={{ 
+          rotate: { duration: 50, repeat: Infinity, ease: "linear" },
+          scale: { duration: 5, repeat: Infinity, ease: "easeInOut" }
+        }}
         className="absolute -top-20 -right-20 w-80 h-80 border-4 border-sky-100/30 rounded-full flex items-center justify-center"
       >
         <div className="text-4xl opacity-10 grayscale">✏️</div>
+      </motion.div>
+      <motion.div
+        animate={{ 
+          y: [0, -20, 0],
+          opacity: [0.05, 0.1, 0.05]
+        }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-1/4 left-1/4 text-6xl opacity-5 grayscale select-none pointer-events-none"
+      >
+        📐
+      </motion.div>
+      <motion.div
+        animate={{ 
+          y: [0, 25, 0],
+          opacity: [0.05, 0.1, 0.05]
+        }}
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        className="absolute bottom-1/4 right-1/3 text-6xl opacity-5 grayscale select-none pointer-events-none"
+      >
+        🧪
       </motion.div>
     </div>
   );
