@@ -579,8 +579,8 @@ export default function App() {
         </div>
 
         {/* Controls - Removed the big button from here */}
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-30">
-          <p className="text-sky-900/60 text-lg bg-white/50 px-4 py-2 rounded-full backdrop-blur-sm">
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-30 w-full">
+          <p className="text-sky-900/60 text-lg bg-white/50 px-4 py-2 rounded-full backdrop-blur-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[80%]">
             {gameState === 'playing' ? "공부하고 상단 버튼을 터치하세요!" : "게임이 끝났어요!"}
           </p>
         </div>
