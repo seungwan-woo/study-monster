@@ -40,17 +40,100 @@ function cn(...inputs: ClassValue[]) {
 // --- Types ---
 type GameState = 'playing' | 'won' | 'lost';
 
+interface MonsterConfig {
+  id: string;
+  name: string;
+  description: string;
+  pushSpeed: number; // Passive push speed
+  activeStrength: number; // Strength when "Monster Attack" is clicked
+  phrases: string[];
+  color: string;
+  icon: string;
+}
+
 interface Message {
   role: 'user' | 'model';
   text: string;
 }
 
 // --- Constants ---
-const INITIAL_POSITION = 50; // 0 is monster wins, 100 is boy wins
-const MONSTER_PUSH_SPEED = 0.3; // Position units per second
-const BOY_PUSH_STRENGTH = 4; // Position units per click
-const ULTIMATE_STRENGTH = 12; // Position units for special move
+const INITIAL_POSITION = 50; 
 const TICK_INTERVAL = 100; // ms
+const BOY_PUSH_STRENGTH = 4;
+const ULTIMATE_STRENGTH = 12;
+
+const MONSTERS: MonsterConfig[] = [
+  {
+    id: 'wolf',
+    name: '공부 늑대',
+    description: '표준적인 몬스터입니다. 꾸준히 밀어붙입니다.',
+    pushSpeed: 0.3,
+    activeStrength: 4,
+    color: 'bg-stone-400',
+    icon: '🐺',
+    phrases: [
+      "글씨가 지렁이 기어가는 것 같아!",
+      "딴짓하면 내가 더 가까이 간다!",
+      "틀렸지? 내가 한 칸 전진!",
+      "집중 안 하면 엉덩이 깨문다!",
+      "공부 몬스터는 배가 고프다!",
+      "졸음이 오나? 내가 깨워줄게!",
+      "낙서하지 말고 문제 풀어!",
+      "내가 이기면 오늘 간식은 내 거!"
+    ]
+  },
+  {
+    id: 'slime',
+    name: '끈적 슬라임',
+    description: '느리지만 한 번 공격할 때 아주 묵직합니다.',
+    pushSpeed: 0.15,
+    activeStrength: 7,
+    color: 'bg-emerald-400',
+    icon: '🧪',
+    phrases: [
+      "끈적끈적하게 방해해주마!",
+      "내 몸속에 교과서를 가둬버릴 거야!",
+      "느릿느릿... 하지만 멈추지 않아!",
+      "공부하기 싫지? 나랑 같이 놀자~",
+      "네 집중력을 끈적하게 녹여주마!",
+      "한 번 잡히면 못 빠져나갈걸?"
+    ]
+  },
+  {
+    id: 'dragon',
+    name: '졸음 드래곤',
+    description: '매우 빠르게 다가오지만, 직접적인 공격력은 약합니다.',
+    pushSpeed: 0.6,
+    activeStrength: 2,
+    color: 'bg-red-500',
+    icon: '🐲',
+    phrases: [
+      "내 뜨거운 졸음 브레스를 받아라!",
+      "날아오는 속도를 감당할 수 있겠나?",
+      "눈꺼풀이 무거워지는 마법을 걸었다!",
+      "하늘 위에서 네 숙제를 다 태워버릴 거야!",
+      "졸음의 불꽃이 타오른다!",
+      "빨리 포기하고 잠이나 자라구!"
+    ]
+  },
+  {
+    id: 'ghost',
+    name: '깜빡 유령',
+    description: '공격력이 매번 달라지는 종잡을 수 없는 유령입니다.',
+    pushSpeed: 0.35,
+    activeStrength: 0, // Calculated randomly
+    color: 'bg-indigo-300',
+    icon: '👻',
+    phrases: [
+      "방금 배운 거 다 까먹었지? 히히!",
+      "머릿속을 하얗게 지워주마!",
+      "내가 보였다 안 보였다 할걸?",
+      "기억력이 유령처럼 사라진다~",
+      "문제 번호가 몇 번이었더라?",
+      "공포의 받아쓰기 시험을 보여주마!"
+    ]
+  }
+];
 
 const FUNNY_PHRASES = [
   "공부는 껌이지! (근데 좀 딱딱한 껌...)",
@@ -127,12 +210,13 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [boyImage, setBoyImage] = useState<string | null>(null);
   const [monsterImage, setMonsterImage] = useState<string | null>(null);
+  const [selectedMonster, setSelectedMonster] = useState<MonsterConfig>(MONSTERS[0]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [apiKeySelected, setApiKeySelected] = useState(false);
   const [currentPhrase, setCurrentPhrase] = useState('');
-  const [phraseTimer, setPhraseTimer] = useState<NodeJS.Timeout | null>(null);
   const [monsterPhrase, setMonsterPhrase] = useState('');
-  const [monsterPhraseTimer, setMonsterPhraseTimer] = useState<NodeJS.Timeout | null>(null);
+  const phraseTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const monsterPhraseTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [boyConsecutive, setBoyConsecutive] = useState(0);
   const [monsterConsecutive, setMonsterConsecutive] = useState(0);
   const [isUltimate, setIsUltimate] = useState<'boy' | 'monster' | null>(null);
@@ -145,7 +229,7 @@ export default function App() {
 
     const interval = setInterval(() => {
       setPosition(prev => {
-        const next = prev - (MONSTER_PUSH_SPEED * (TICK_INTERVAL / 1000));
+        const next = prev - (selectedMonster.pushSpeed * (TICK_INTERVAL / 1000));
         if (next <= 0) {
           setGameState('lost');
           return 0;
@@ -155,7 +239,7 @@ export default function App() {
     }, TICK_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [gameState]);
+  }, [gameState, selectedMonster]);
 
   const handlePush = () => {
     if (gameState !== 'playing') return;
@@ -176,10 +260,9 @@ export default function App() {
     }
 
     // Show funny phrase
-    if (phraseTimer) clearTimeout(phraseTimer);
+    if (phraseTimerRef.current) clearTimeout(phraseTimerRef.current);
     setCurrentPhrase(phrase);
-    const timer = setTimeout(() => setCurrentPhrase(''), 1500);
-    setPhraseTimer(timer);
+    phraseTimerRef.current = setTimeout(() => setCurrentPhrase(''), 1500);
 
     // Trigger monster hit animation
     setMonsterHit(true);
@@ -203,21 +286,26 @@ export default function App() {
     setMonsterConsecutive(newConsecutive);
     setBoyConsecutive(0);
 
-    let strength = BOY_PUSH_STRENGTH;
-    let phrase = MONSTER_FUNNY_PHRASES[Math.floor(Math.random() * MONSTER_FUNNY_PHRASES.length)];
+    let strength = selectedMonster.activeStrength;
+    
+    // Ghost monster random strength
+    if (selectedMonster.id === 'ghost') {
+      strength = Math.floor(Math.random() * 8) + 1;
+    }
+
+    let phrase = selectedMonster.phrases[Math.floor(Math.random() * selectedMonster.phrases.length)];
 
     if (newConsecutive >= 5) {
-      strength = ULTIMATE_STRENGTH;
+      strength = strength * 2.5;
       setIsUltimate('monster');
       setTimeout(() => setIsUltimate(null), 1000);
       setMonsterConsecutive(0);
     }
 
     // Show monster phrase
-    if (monsterPhraseTimer) clearTimeout(monsterPhraseTimer);
+    if (monsterPhraseTimerRef.current) clearTimeout(monsterPhraseTimerRef.current);
     setMonsterPhrase(phrase);
-    const timer = setTimeout(() => setMonsterPhrase(''), 1500);
-    setMonsterPhraseTimer(timer);
+    monsterPhraseTimerRef.current = setTimeout(() => setMonsterPhrase(''), 1500);
 
     // Trigger boy hit animation
     setBoyHit(true);
@@ -243,13 +331,13 @@ export default function App() {
     setMonsterHit(false);
   };
 
-  // API Key Check
+  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
-      if (phraseTimer) clearTimeout(phraseTimer);
-      if (monsterPhraseTimer) clearTimeout(monsterPhraseTimer);
+      if (phraseTimerRef.current) clearTimeout(phraseTimerRef.current);
+      if (monsterPhraseTimerRef.current) clearTimeout(monsterPhraseTimerRef.current);
     };
-  }, [phraseTimer, monsterPhraseTimer]);
+  }, []);
 
   useEffect(() => {
     const checkKey = async () => {
@@ -272,11 +360,11 @@ export default function App() {
     <div className="relative h-screen w-full bg-sky-50 font-game overflow-hidden flex flex-col">
       {/* Header */}
       <header className="p-4 flex justify-between items-center bg-white/50 backdrop-blur-sm border-b border-sky-100 z-10">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <div className="bg-sky-500 p-2 rounded-lg text-white">
             <Gamepad2 size={24} />
           </div>
-          <h1 className="text-2xl font-bold text-sky-900">공부 몬스터 퇴치!</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-sky-900 hidden sm:block">공부 몬스터 퇴치!</h1>
         </div>
         <div className="flex items-center gap-4">
           {/* Push Button - Kirby First */}
@@ -380,12 +468,12 @@ export default function App() {
                 {currentPhrase && (
                   <motion.div
                     initial={{ opacity: 0, y: 10, scale: 0.8 }}
-                    animate={{ opacity: 1, y: -40, scale: 1 }}
+                    animate={{ opacity: 1, y: -60, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
-                    className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white px-4 py-2 rounded-2xl shadow-xl border-2 border-sky-200 text-sky-900 font-bold whitespace-nowrap z-30"
+                    className="absolute -top-16 left-1/2 -translate-x-[85%] bg-white px-4 py-2 rounded-2xl shadow-xl border-2 border-sky-200 text-sky-900 font-bold whitespace-nowrap z-30"
                   >
                     {currentPhrase}
-                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-r-2 border-b-2 border-sky-200 rotate-45" />
+                    <div className="absolute -bottom-2 right-4 w-4 h-4 bg-white border-r-2 border-b-2 border-sky-200 rotate-45" />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -447,12 +535,12 @@ export default function App() {
                     animate={{ opacity: 1, y: -40, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                     className={cn(
-                      "absolute -top-12 left-1/2 -translate-x-1/2 bg-white px-4 py-2 rounded-2xl shadow-xl border-2 border-red-200 text-red-900 font-bold whitespace-nowrap z-30",
+                      "absolute -top-12 left-1/2 -translate-x-[15%] bg-white px-4 py-2 rounded-2xl shadow-xl border-2 border-red-200 text-red-900 font-bold whitespace-nowrap z-30",
                       isUltimate === 'monster' && "border-red-600 bg-red-50 text-red-700 scale-110"
                     )}
                   >
                     {monsterPhrase}
-                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-r-2 border-b-2 border-red-200 rotate-45" />
+                    <div className="absolute -bottom-2 left-4 w-4 h-4 bg-white border-r-2 border-b-2 border-red-200 rotate-45" />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -466,7 +554,7 @@ export default function App() {
                     referrerPolicy="no-referrer"
                   />
                 ) : (
-                  <DefaultMonster />
+                  <DefaultMonster type={selectedMonster.id} />
                 )}
               </div>
               {/* Push Force Effect */}
@@ -558,6 +646,11 @@ export default function App() {
             onGenerateMonster={(img) => setMonsterImage(img)}
             apiKeySelected={apiKeySelected}
             onSelectKey={handleSelectKey}
+            selectedMonster={selectedMonster}
+            onSelectMonster={(m) => {
+              setSelectedMonster(m);
+              setMonsterImage(null); // Reset custom image when switching types
+            }}
           />
         )}
       </AnimatePresence>
@@ -589,21 +682,73 @@ function DefaultBoy() {
   );
 }
 
-function DefaultMonster() {
+function DefaultMonster({ type = 'wolf' }: { type?: string }) {
+  const renderMonster = () => {
+    switch (type) {
+      case 'slime':
+        return (
+          <div className="w-32 h-24 bg-emerald-400 rounded-t-full border-4 border-emerald-600 relative flex items-center justify-center">
+            <div className="absolute top-1/4 left-1/4 w-4 h-4 bg-white rounded-full flex items-center justify-center">
+              <div className="w-2 h-2 bg-black rounded-full" />
+            </div>
+            <div className="absolute top-1/4 right-1/4 w-4 h-4 bg-white rounded-full flex items-center justify-center">
+              <div className="w-2 h-2 bg-black rounded-full" />
+            </div>
+            <div className="absolute bottom-4 w-12 h-2 bg-emerald-600 rounded-full" />
+          </div>
+        );
+      case 'dragon':
+        return (
+          <div className="relative w-32 h-32 bg-red-500 rounded-lg border-4 border-red-700 flex flex-col items-center justify-center">
+            <div className="absolute -top-6 flex gap-4">
+              <div className="w-6 h-8 bg-red-700 clip-triangle" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }} />
+              <div className="w-6 h-8 bg-red-700 clip-triangle" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }} />
+            </div>
+            <div className="flex gap-4 mb-2">
+              <div className="w-4 h-4 bg-yellow-300 rounded-full border-2 border-red-900" />
+              <div className="w-4 h-4 bg-yellow-300 rounded-full border-2 border-red-900" />
+            </div>
+            <div className="w-16 h-8 bg-red-900 rounded-b-lg flex items-center justify-center">
+              <div className="w-2 h-2 bg-orange-500 animate-pulse" />
+            </div>
+          </div>
+        );
+      case 'ghost':
+        return (
+          <div className="w-32 h-40 bg-white/80 rounded-t-full border-4 border-indigo-200 relative flex flex-col items-center pt-8">
+            <div className="flex gap-6 mb-4">
+              <div className="w-4 h-4 bg-indigo-900 rounded-full" />
+              <div className="w-4 h-4 bg-indigo-900 rounded-full" />
+            </div>
+            <div className="w-8 h-8 border-4 border-indigo-900 rounded-full" />
+            <div className="absolute bottom-0 left-0 right-0 h-8 flex justify-around">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="w-6 h-8 bg-white/80 rounded-full -mb-4" />
+              ))}
+            </div>
+          </div>
+        );
+      default:
+        return (
+          <div className="w-32 h-32 bg-stone-300 border-4 border-stone-400 relative flex flex-col items-center justify-center">
+            <div className="w-24 h-16 bg-stone-200 border-2 border-stone-400 relative">
+              <div className="absolute top-2 left-4 w-3 h-3 bg-black" />
+              <div className="absolute top-2 right-4 w-3 h-3 bg-black" />
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-6 h-4 bg-stone-800" />
+            </div>
+            <div className="absolute -top-4 left-4 w-6 h-6 bg-stone-300 border-2 border-stone-400" />
+            <div className="absolute -top-4 right-4 w-6 h-6 bg-stone-300 border-2 border-stone-400" />
+          </div>
+        );
+    }
+  };
+
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center">
-      <div className="w-32 h-32 bg-stone-300 border-4 border-stone-400 relative flex flex-col items-center justify-center">
-        {/* Minecraft Wolf Face */}
-        <div className="w-24 h-16 bg-stone-200 border-2 border-stone-400 relative">
-          <div className="absolute top-2 left-4 w-3 h-3 bg-black" />
-          <div className="absolute top-2 right-4 w-3 h-3 bg-black" />
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-6 h-4 bg-stone-800" />
-        </div>
-        {/* Ears */}
-        <div className="absolute -top-4 left-4 w-6 h-6 bg-stone-300 border-2 border-stone-400" />
-        <div className="absolute -top-4 right-4 w-6 h-6 bg-stone-300 border-2 border-stone-400" />
-      </div>
-      <p className="mt-4 text-stone-900 font-bold text-xl bg-white/80 px-4 py-1 rounded-full">공부 몬스터</p>
+      {renderMonster()}
+      <p className="mt-4 text-stone-900 font-bold text-xl bg-white/80 px-4 py-1 rounded-full">
+        {MONSTERS.find(m => m.id === type)?.name || '공부 몬스터'}
+      </p>
     </div>
   );
 }
@@ -719,13 +864,17 @@ function SettingsPanel({
   onGenerateBoy, 
   onGenerateMonster,
   apiKeySelected,
-  onSelectKey
+  onSelectKey,
+  selectedMonster,
+  onSelectMonster
 }: { 
   onClose: () => void;
   onGenerateBoy: (img: string) => void;
   onGenerateMonster: (img: string) => void;
   apiKeySelected: boolean;
   onSelectKey: () => void;
+  selectedMonster: MonsterConfig;
+  onSelectMonster: (m: MonsterConfig) => void;
 }) {
   const [isGenerating, setIsGenerating] = useState<'boy' | 'monster' | null>(null);
   const [imageSize, setImageSize] = useState<'1K' | '2K' | '4K'>('1K');
@@ -741,7 +890,7 @@ function SettingsPanel({
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const prompt = type === 'boy' 
         ? "Kirby character from Nintendo, cute pink round creature with round glasses, 3D render, white background, high quality, vibrant colors"
-        : "Minecraft Wolf, blocky pixelated style, 3D render, white background, high quality, authentic minecraft aesthetic";
+        : `A monster character representing ${selectedMonster.name}, ${selectedMonster.description}, 3D render, white background, high quality, vibrant colors`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-3.1-flash-image-preview',
@@ -781,85 +930,115 @@ function SettingsPanel({
         animate={{ scale: 1, y: 0 }}
         className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl border-4 border-white overflow-y-auto max-h-[90vh]"
       >
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-bold text-stone-900">캐릭터 꾸미기</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-3xl font-bold text-stone-900">게임 설정</h2>
           <button onClick={onClose} className="p-2 hover:bg-stone-100 rounded-full">
             <X size={28} />
           </button>
         </div>
 
-        {!apiKeySelected ? (
-          <div className="bg-amber-50 border border-amber-200 p-6 rounded-2xl mb-8">
-            <h3 className="text-xl font-bold text-amber-900 mb-2">API 키가 필요해요!</h3>
-            <p className="text-amber-800 mb-4">캐릭터를 AI로 생성하려면 유료 Gemini API 키를 선택해야 합니다.</p>
-            <button 
-              onClick={onSelectKey}
-              className="px-6 py-3 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-400 transition-colors"
-            >
-              API 키 선택하기
-            </button>
-            <p className="mt-2 text-sm text-amber-700">
-              <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="underline">결제 문서 확인하기</a>
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {/* Size Selector */}
-            <div className="space-y-3">
-              <label className="text-lg font-bold text-stone-700">이미지 크기</label>
-              <div className="flex gap-2">
-                {(['1K', '2K', '4K'] as const).map(size => (
-                  <button
-                    key={size}
-                    onClick={() => setImageSize(size)}
-                    className={cn(
-                      "flex-1 py-2 rounded-xl font-bold border-2 transition-all",
-                      imageSize === size 
-                        ? "bg-sky-500 text-white border-sky-500" 
-                        : "bg-white text-stone-500 border-stone-200 hover:border-sky-200"
-                    )}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Boy Customizer */}
-              <div className="p-6 bg-sky-50 rounded-2xl border-2 border-sky-100 flex flex-col items-center">
-                <div className="w-32 h-32 bg-white rounded-2xl mb-4 flex items-center justify-center border-2 border-sky-200 overflow-hidden">
-                  <ImageIcon size={48} className="text-sky-200" />
+        {/* Monster Selection */}
+        <section className="mb-8">
+          <h3 className="text-xl font-bold text-stone-800 mb-4 flex items-center gap-2">
+            <div className="bg-red-100 p-2 rounded-lg text-red-600">👾</div>
+            몬스터 선택
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {MONSTERS.map(monster => (
+              <button
+                key={monster.id}
+                onClick={() => onSelectMonster(monster)}
+                className={cn(
+                  "p-4 rounded-2xl border-2 text-left transition-all",
+                  selectedMonster.id === monster.id 
+                    ? "border-sky-500 bg-sky-50 ring-2 ring-sky-200" 
+                    : "border-stone-100 hover:border-sky-200 hover:bg-stone-50"
+                )}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="text-2xl">{monster.icon}</span>
+                  <span className="font-bold text-stone-900">{monster.name}</span>
                 </div>
-                <h3 className="text-xl font-bold text-sky-900 mb-4">나 (소년)</h3>
-                <button 
+                <p className="text-xs text-stone-600 leading-relaxed">{monster.description}</p>
+                <div className="mt-3 flex gap-2">
+                  <span className="text-[10px] bg-white px-2 py-0.5 rounded border border-stone-200">속도: {monster.pushSpeed}</span>
+                  <span className="text-[10px] bg-white px-2 py-0.5 rounded border border-stone-200">파워: {monster.activeStrength || '랜덤'}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* AI Character Generation */}
+        <section className="mb-8 border-t border-stone-100 pt-8">
+          <h3 className="text-xl font-bold text-stone-800 mb-4 flex items-center gap-2">
+            <Sparkles className="text-sky-500" size={24} />
+            AI 캐릭터 생성
+          </h3>
+          
+          {!apiKeySelected ? (
+            <div className="bg-amber-50 border border-amber-200 p-6 rounded-2xl mb-8">
+              <h3 className="text-xl font-bold text-amber-900 mb-2">API 키가 필요해요!</h3>
+              <p className="text-amber-800 mb-4">캐릭터를 AI로 생성하려면 유료 Gemini API 키를 선택해야 합니다.</p>
+              <button 
+                onClick={onSelectKey}
+                className="px-6 py-3 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-400 transition-colors"
+              >
+                API 키 선택하기
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-bold text-stone-700">이미지 품질</label>
+                <div className="flex gap-2">
+                  {(['1K', '2K', '4K'] as const).map(size => (
+                    <button
+                      key={size}
+                      onClick={() => setImageSize(size)}
+                      className={cn(
+                        "px-4 py-2 rounded-lg border-2 font-bold transition-all",
+                        imageSize === size ? "bg-sky-500 border-sky-600 text-white" : "border-stone-100 text-stone-600 hover:bg-stone-50"
+                      )}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
                   onClick={() => generateImage('boy')}
-                  disabled={isGenerating !== null}
-                  className="w-full py-3 bg-sky-500 text-white rounded-xl font-bold hover:bg-sky-400 disabled:bg-sky-300 flex items-center justify-center gap-2"
+                  disabled={!!isGenerating}
+                  className="flex flex-col items-center gap-4 p-6 rounded-2xl border-2 border-dashed border-sky-200 hover:bg-sky-50 transition-colors group"
                 >
-                  {isGenerating === 'boy' ? <Loader2 className="animate-spin" /> : <Sparkles size={18} />}
-                  AI로 생성하기
+                  <div className="w-16 h-16 bg-sky-100 rounded-full flex items-center justify-center text-sky-500 group-hover:scale-110 transition-transform">
+                    {isGenerating === 'boy' ? <Loader2 className="animate-spin" size={32} /> : <ImageIcon size={32} />}
+                  </div>
+                  <div className="text-center">
+                    <p className="font-bold text-sky-900">나(커비) 생성</p>
+                    <p className="text-xs text-sky-700 mt-1">안경 쓴 귀여운 커비</p>
+                  </div>
                 </button>
-              </div>
 
-              {/* Monster Customizer */}
-              <div className="p-6 bg-red-50 rounded-2xl border-2 border-red-100 flex flex-col items-center">
-                <div className="w-32 h-32 bg-white rounded-2xl mb-4 flex items-center justify-center border-2 border-red-200 overflow-hidden">
-                  <ImageIcon size={48} className="text-red-200" />
-                </div>
-                <h3 className="text-xl font-bold text-red-900 mb-4">몬스터</h3>
-                <button 
+                <button
                   onClick={() => generateImage('monster')}
-                  disabled={isGenerating !== null}
-                  className="w-full py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-400 disabled:bg-red-300 flex items-center justify-center gap-2"
+                  disabled={!!isGenerating}
+                  className="flex flex-col items-center gap-4 p-6 rounded-2xl border-2 border-dashed border-red-200 hover:bg-red-50 transition-colors group"
                 >
-                  {isGenerating === 'monster' ? <Loader2 className="animate-spin" /> : <Sparkles size={18} />}
-                  AI로 생성하기
+                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform">
+                    {isGenerating === 'monster' ? <Loader2 className="animate-spin" size={32} /> : <ImageIcon size={32} />}
+                  </div>
+                  <div className="text-center">
+                    <p className="font-bold text-red-900">몬스터 생성</p>
+                    <p className="text-xs text-red-700 mt-1">{selectedMonster.name} 스타일</p>
+                  </div>
                 </button>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </section>
 
         <div className="mt-8 pt-8 border-t border-stone-100">
           <button 
